@@ -1,0 +1,45 @@
+On reçoit un zip avec un fichier par jour d'ouverture.
+Le fichier peut être absent ou "vide" (cf. infra) si pas de mouvement mais pas chez Argenta.
+
+structure globale (automate ?)
+vide	0, 1, 9
+presque	0, 1, 8, 4, 9
+
+solde
+2=0	BBAN belge
+2=1	BBAN étranger
+2=2	IBAN belge
+	31 AN IBAN
+	3 AN extension ou blanc
+	3 AN ISO devise
+2=3	IBAN étranger
+	34 AN IBAN
+	3 AN ISO devise
+
+CategoryPurpose dans Movement'
+définis par SEPA
+voir https://www.iso20022.org/external_code_list.page
+
+opération
+1	type (simple, globalisé, p. 5)
+2-3	famille (virements, cartes, domiciliations...)
+4-5	opération (débit ou crédit)
+6-7-8	rubrique
+familles p. 27
+01 à 39 : opérations nationales-locales/SEPA 
+41 à 79 : opérations internationales/non-SEPA  
+80 à 89 : autres familles
+
+PCI DSS est une directive internationale visant à prévenir la fraude aux cartes.
+Seuls les 6 premiers et les 4 derniers caractères sont utilisés,
+les autres sont masqués par des 0.
+113=débit
+115=terminal, p. 64
+124=crédit
+
+communication structurée d'un virement
+dans le mouvement (2) ou l'info (3) selon la banque
+test via mon compte : +++ 085 / 1927 / 54115 +++
+
+réassembler les enregistrements en un mouvement
+parser complètement les "communications" (p. 59)
