@@ -82,11 +82,85 @@ let parse_old_balance l =
   {account; currency; seq; debit; amount; date; name; label; seq'}
 
 module Operation = struct
-  type t = string (** TODO p. 27 *)
+  type typ = (** p. 5 *)
+    | Simple
+    | Customer
+    | Customer_detail
+    | Bank
+    | Bank_detail
+    | Bank_detail'
+    | Bank_detail''
+    | Detailed
+    | Detail
+
+  let typ_of_char = function
+    | '0' -> Simple
+    | '1' -> Customer
+    | '5' -> Customer_detail
+    | '2' -> Bank
+    | '6' -> Bank_detail
+    | '7' -> Bank_detail'
+    | '9' -> Bank_detail''
+    | '3' -> Detailed
+    | '8' -> Detail
+    | _ -> invalid_arg "Operation.typ_of_char"
+
+  let char_of_typ = function
+    | Simple -> '0'
+    | Customer -> '1'
+    | Customer_detail -> '5'
+    | Bank -> '2'
+    | Bank_detail -> '6'
+    | Bank_detail' -> '7'
+    | Bank_detail'' -> '9'
+    | Detailed -> '3'
+    | Detail -> '8'
+
+  type family = (** p. 27 *)
+    | Transfer (** SEPA *)
+    | Instant_transfer
+    | Check
+    | Card
+    | Direct_debit
+    | Fee_or_interest
+    (* TODO try counter *)
+    | International (** non-SEPA *)
+    | Foreign_check
+    | Other of char * char
+
+  let family_of_couple = function
+    | '0', '1' -> Transfer
+    | '0', '2' -> Instant_transfer
+    | '0', '3' -> Check
+    | '0', '4' -> Card
+    | '0', '5' -> Direct_debit
+    | '3', '5' -> Fee_or_interest
+    | '4', '1' -> International
+    | '4', '3' -> Foreign_check
+    | a, b -> Other (a, b)
+
+  let couple_of_family = function
+    | Transfer -> '0', '1'
+    | Instant_transfer -> '0', '2'
+    | Check -> '0', '3'
+    | Card -> '0', '4'
+    | Direct_debit -> '0', '5'
+    | Fee_or_interest -> '3', '5'
+    | International -> '4', '1'
+    | Foreign_check -> '4', '3'
+    | Other (a, b) -> a, b
+
+  type operation = Op of char * char (** p. 28-52 *)
+  type rubric = R of char * char * char (** p. 53-58 *)
+
+  type t = typ * family * operation * rubric (** p. 5 *)
 
   let parse l col =
     let ofs = col-1 in
-    String.sub l ofs 8
+    typ_of_char l.[ofs],
+    family_of_couple (l.[ofs+1], l.[ofs+2]),
+    Op (l.[ofs+3], l.[ofs+4]),
+    R (l.[ofs+5], l.[ofs+6], l.[ofs+7])
 end
 
 type communication = (** TODO p. 59 *)
@@ -198,7 +272,7 @@ let parse_footer l =
   {records; total_debit; total_credit; next_file}
 
 
-type t =
+type t = (** p. 4 *)
   | Header of header
   | Old_balance of old_balance
   | Movement of movement
@@ -209,7 +283,7 @@ type t =
   | New_balance of new_balance
   | Footer of footer
 
-let parse l = (** p. 4 *)
+let parse l =
   match l.[0] with
   | '0' -> Ok (Header (parse_header l))
   | '1' -> Ok (Old_balance (parse_old_balance l))
@@ -245,9 +319,11 @@ let dump f =
           records total_debit total_credit
           (if next_file then "next" else "last")
         (* TODO compare counts and balances *)
-      | Ok (Movement {seq; ref; debit; amount; value; op; _}) ->
-        Printf.printf "movement: %d/%d/%d#%d %S %S %d€\n"
-          value.day value.month value.year seq ref op (if debit then -amount else amount)
+      | Ok (Movement {seq; ref; debit; amount; value; op = typ, fam, _, _; comm; _}) ->
+        let opt = Operation.char_of_typ typ in
+        let f1, f2 = Operation.couple_of_family fam in
+        Printf.printf "movement: %d/%d/%d#%d %S T%cF%c%c %d€\n"
+          value.day value.month value.year seq ref opt f1 f2 (if debit then -amount else amount)
       | Ok (Movement'' {seq; account; currency; name; _}) ->
         Printf.printf "movement'': #%d %s in %S for %s\n"
           seq account currency name
