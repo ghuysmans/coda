@@ -163,20 +163,26 @@ module Operation = struct
     R (l.[ofs+5], l.[ofs+6], l.[ofs+7])
 end
 
-type communication = (** TODO p. 59 *)
+type communication = (** p. 59 *)
   | Free of string
-  | Structured of string * string (* TODO reassemble *)
+  | VCS of string
+  | Structured of string * string (* TODO write a reassembly function *)
 
 let parse_communication l col =
   let ofs = col-1 in
   if parse_bool "structured" l.[ofs] then
-    (* TODO test with an actual transfer *)
-    Structured (String.sub l (ofs+1) 3, String.sub l (ofs+4) 50)
+    let typ = String.sub l (ofs+1) 3 in
+    let data = String.sub l (ofs+4) 50 in
+    if typ = "101" then
+      VCS (String.trim data)
+    else
+      Structured (typ, data)
   else
-    Free (String.sub l (ofs+1) 53)
+    Free String.(trim (sub l (ofs+1) 53))
 
 let show_communication = function
   | Free s -> s
+  | VCS s -> "+++" ^ s ^ "+++"
   | Structured (c, s) -> c ^ "#" ^ s
 
 type movement = { (** p. 17 *)
@@ -322,8 +328,9 @@ let dump f =
       | Ok (Movement {seq; ref; debit; amount; value; op = typ, fam, _, _; comm; _}) ->
         let opt = Operation.char_of_typ typ in
         let f1, f2 = Operation.couple_of_family fam in
-        Printf.printf "movement: %d/%d/%d#%d %S T%cF%c%c %d€\n"
-          value.day value.month value.year seq ref opt f1 f2 (if debit then -amount else amount)
+        Printf.printf "movement: %d/%d/%d#%d %S T%cF%c%c %d€ %S\n"
+          value.day value.month value.year seq ref opt f1 f2
+          (if debit then -amount else amount) (show_communication comm)
       | Ok (Movement'' {seq; account; currency; name; _}) ->
         Printf.printf "movement'': #%d %s in %S for %s\n"
           seq account currency name

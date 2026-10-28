@@ -1,3 +1,5 @@
+crédit avec T0F00 ???
+
 On reçoit un zip avec un fichier par jour d'ouverture.
 Le fichier peut être absent ou "vide" (cf. infra) si pas de mouvement mais pas chez Argenta.
 
@@ -10,14 +12,10 @@ définis par SEPA
 voir https://www.iso20022.org/external_code_list.page
 
 réassembler les enregistrements en un mouvement
-parser complètement les "communications" (p. 59)
+parser complètement les communications (p. 59)
 PCI DSS est une directive internationale visant à prévenir la fraude aux cartes.
 Seuls les 6 premiers et les 4 derniers caractères sont utilisés,
 les autres sont masqués par des 0.
 113=débit
 115=terminal, p. 64
 124=crédit
-
-communication structurée d'un virement
-dans le mouvement (2) ou l'info (3) selon la banque
-test via mon compte : +++ 085 / 1927 / 54115 +++
