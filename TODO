@@ -1,11 +1,22 @@
-crédit avec T0F00 ???
+crédit avec T0F00 : Bancontact ?
+voir test online banking àpd 30/10
 
 On reçoit un zip avec un fichier par jour d'ouverture.
 Le fichier peut être absent ou "vide" (cf. infra) si pas de mouvement mais pas chez Argenta.
 
+2026-10-13  description ;C6J13AG07W00015T
+    Ch:Poste        35,91€
+    A:Banque
+noter l'id ailleurs ?
+suggérer un nom de fichier à créer sur le Drive :
+* 261013-description
+* 261013-société
+* 26002 (compter quoi ?)
+
 structure globale (automate ?)
 vide	0, 1, 9
 presque	0, 1, 8, 4, 9
+compter les lignes et sommer les montants
 
 CategoryPurpose dans Movement'
 définis par SEPA
