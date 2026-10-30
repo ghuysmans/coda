@@ -196,6 +196,7 @@ type movement = { (** p. 17 *)
   comm: communication;
   posting: Date.t;
   seq': int;
+  level: int;
   next_related_movement: bool;
   next_related_information: bool;
 }
@@ -212,9 +213,10 @@ let parse_movement l =
   let comm = parse_communication l 62 in
   let posting = Date.parse l 116 in
   let seq' = int_of_string (String.sub l 121 3) in
+  let level = int_of_string (String.sub l 124 1) in
   let next_related_movement = parse_bool "next_related_movement" l.[125] in
   let next_related_information = parse_bool "next_related_information" l.[127] in
-  {seq; detail; ref; debit; amount; value; op; comm; posting; seq'; next_related_movement; next_related_information}
+  {seq; detail; ref; debit; amount; value; op; comm; posting; seq'; level; next_related_movement; next_related_information}
 
 type r_typ = (** p. 19 *)
   | Reject
