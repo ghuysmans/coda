@@ -233,6 +233,11 @@ let r_typ_of_char = function
   | '5' -> Cancellation
   | _ -> invalid_arg "r_typ_of_char"
 
+type iso_return = string (* TODO *)
+
+type iso_category_purpose = string (** TODO see https://www.iso20022.org/external_code_list.page *)
+type iso_purpose = string (** TODO see https://www.iso20022.org/external_code_list.page *)
+
 type movement' = { (** p. 19 *)
   seq: int;
   detail: int;
@@ -240,9 +245,9 @@ type movement' = { (** p. 19 *)
   customer_ref: string;
   bic: string;
   r_typ: r_typ option;
-  iso_return: string; (* TODO *)
-  category_purpose: string; (** see https://www.iso20022.org/external_code_list.page *)
-  purpose: string; (** see https://www.iso20022.org/external_code_list.page *)
+  return: iso_return;
+  category_purpose: iso_category_purpose;
+  purpose: iso_purpose;
   next_related_movement: bool;
   next_related_information: bool;
 }
@@ -260,12 +265,12 @@ let parse_movement' l =
     | ' ' -> None
     | c -> Some (r_typ_of_char c)
   in
-  let iso_return = String.sub l 113 4 in
+  let return = String.sub l 113 4 in
   let category_purpose = String.sub l 117 4 in
   let purpose = String.sub l 121 4 in
   let next_related_movement = parse_bool "next_related_movement" l.[125] in
   let next_related_information = parse_bool "next_related_information" l.[127] in
-  {seq; detail; comm'; customer_ref; bic; r_typ; iso_return; category_purpose; purpose; next_related_movement; next_related_information}
+  {seq; detail; comm'; customer_ref; bic; r_typ; return; category_purpose; purpose; next_related_movement; next_related_information}
 
 type movement'' = { (** p. 21 *)
   seq: int;
