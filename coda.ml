@@ -285,6 +285,24 @@ let parse_movement'' l =
   let next_related_information = parse_bool "next_related_information" l.[127] in
   {seq; detail; account; currency; name; next_related_information}
 
+type generic_information = {
+  article: char;
+  seq: int;
+  detail: int;
+  (* TODO p. 21, 69 *)
+  next_related_information: bool;
+  next_unrelated_information: bool; (** TODO check *)
+}
+
+let parse_generic_information l =
+  assert (l.[126] = ' ');
+  let article = l.[1] in
+  let seq = int_of_string (String.sub l 2 4) in
+  let detail = int_of_string (String.sub l 6 4) in
+  let next_related_information = parse_bool "next_related_information" l.[125] in
+  let next_unrelated_information = parse_bool "next_unrelated_information" l.[127] in
+  {article; seq; detail; next_related_information; next_unrelated_information}
+
 type new_balance = { (** p. 24 *)
   seq: int;
   account: account;
@@ -332,7 +350,7 @@ type t = (** p. 4 *)
   | Movement of movement
   | Movement' of movement'
   | Movement'' of movement''
-  | Information (* TODO p. 21, 69 *)
+  | Information of generic_information
   | Free (* TODO *)
   | New_balance of new_balance
   | Footer of footer
@@ -343,7 +361,7 @@ let parse l =
   | '1' -> Ok (Old_balance (parse_old_balance l))
   | '8' -> Ok (New_balance (parse_new_balance l))
   | '9' -> Ok (Footer (parse_footer l))
-  | '3' -> Ok Information
+  | '3' -> Ok (Information (parse_generic_information l))
   | '4' -> Ok Free
   | '2' ->
     begin match l.[1] with
@@ -384,7 +402,7 @@ let dump f =
       | Ok (Movement'' {seq; account; currency; name; _}) ->
         Printf.printf "movement'': #%d %s in %S for %s\n"
           seq account currency name
-      | Ok (Information | Free) -> ()
+      | Ok (Information _ | Free) -> ()
       | Error (`Unknown_record c) ->
         Printf.eprintf "unknown record type %c\n" c;
         exit 1
