@@ -216,6 +216,55 @@ let parse_movement l =
   let next_related_information = parse_bool "next_related_information" l.[127] in
   {seq; detail; ref; debit; amount; value; op; comm; posting; seq'; next_related_movement; next_related_information}
 
+type r_typ = (** p. 19 *)
+  | Reject
+  | Return
+  | Refund
+  | Reversal
+  | Cancellation
+
+let r_typ_of_char = function
+  | '1' -> Reject
+  | '2' -> Return
+  | '3' -> Refund
+  | '4' -> Reversal
+  | '5' -> Cancellation
+  | _ -> invalid_arg "r_typ_of_char"
+
+type movement' = { (** p. 19 *)
+  seq: int;
+  detail: int;
+  comm': string;
+  customer_ref: string;
+  bic: string;
+  r_typ: r_typ option;
+  iso_return: string; (* TODO *)
+  category_purpose: string; (** see https://www.iso20022.org/external_code_list.page *)
+  purpose: string; (** see https://www.iso20022.org/external_code_list.page *)
+  next_related_movement: bool;
+  next_related_information: bool;
+}
+
+let parse_movement' l =
+  assert (l.[109] = ' ');
+  assert (l.[126] = ' ');
+  let seq = int_of_string (String.sub l 2 4) in
+  let detail = int_of_string (String.sub l 6 4) in
+  let comm' = String.sub l 10 53 in
+  let customer_ref = String.sub l 63 35 in
+  let bic = String.sub l 98 11 in
+  let r_typ =
+    match l.[112] with
+    | ' ' -> None
+    | c -> Some (r_typ_of_char c)
+  in
+  let iso_return = String.sub l 113 4 in
+  let category_purpose = String.sub l 117 4 in
+  let purpose = String.sub l 121 4 in
+  let next_related_movement = parse_bool "next_related_movement" l.[125] in
+  let next_related_information = parse_bool "next_related_information" l.[127] in
+  {seq; detail; comm'; customer_ref; bic; r_typ; iso_return; category_purpose; purpose; next_related_movement; next_related_information}
+
 type movement'' = { (** p. 21 *)
   seq: int;
   detail: int;
@@ -226,7 +275,6 @@ type movement'' = { (** p. 21 *)
 }
 
 let parse_movement'' l =
-  assert (l.[1] = '3');
   assert (l.[125] = '0');
   assert (l.[126] = ' ');
   let seq = int_of_string (String.sub l 2 4) in
@@ -282,7 +330,7 @@ type t = (** p. 4 *)
   | Header of header
   | Old_balance of old_balance
   | Movement of movement
-  | Movement' (* TODO *)
+  | Movement' of movement'
   | Movement'' of movement''
   | Information (* TODO p. 21, 69 *)
   | Free (* TODO *)
@@ -300,7 +348,7 @@ let parse l =
   | '2' ->
     begin match l.[1] with
     | '1' -> Ok (Movement (parse_movement l))
-    | '2' -> Ok Movement'
+    | '2' -> Ok (Movement' (parse_movement' l))
     | '3' -> Ok (Movement'' (parse_movement'' l))
     | c -> Error (`Unknown_family c)
     end
@@ -331,10 +379,12 @@ let dump f =
         Printf.printf "movement: %d/%d/%d#%d %S T%cF%c%c %d€ %S\n"
           value.day value.month value.year seq ref opt f1 f2
           (if debit then -amount else amount) (show_communication comm)
+      | Ok (Movement' {seq; comm'; bic; _}) ->
+        Printf.printf "movement': #%d ... %S BIC %s\n" seq comm' bic
       | Ok (Movement'' {seq; account; currency; name; _}) ->
         Printf.printf "movement'': #%d %s in %S for %s\n"
           seq account currency name
-      | Ok (Movement' | Information | Free) -> ()
+      | Ok (Information | Free) -> ()
       | Error (`Unknown_record c) ->
         Printf.eprintf "unknown record type %c\n" c;
         exit 1

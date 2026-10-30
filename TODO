@@ -18,10 +18,6 @@ vide	0, 1, 9
 presque	0, 1, 8, 4, 9
 compter les lignes et sommer les montants
 
-CategoryPurpose dans Movement'
-définis par SEPA
-voir https://www.iso20022.org/external_code_list.page
-
 réassembler les enregistrements en un mouvement
 parser complètement les communications (p. 59)
 PCI DSS est une directive internationale visant à prévenir la fraude aux cartes.
