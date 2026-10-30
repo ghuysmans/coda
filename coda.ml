@@ -320,7 +320,7 @@ let parse_new_balance l =
   let debit = parse_debit l.[41] in
   let amount = int_of_string (String.sub l 42 15) in
   let date = Date.parse l 58 in
-  let next_free = parse_bool "next_Free" l.[127] in
+  let next_free = parse_bool "next_free" l.[127] in
   {seq; account; currency; debit; amount; date; next_free}
 
 type footer = { (** p. 26 *)
@@ -343,6 +343,21 @@ let parse_footer l =
   in
   {records; total_debit; total_credit; next_file}
 
+type free = { (** p. 25 *)
+  seq: int;
+  detail: int;
+  message: string;
+  next_free: bool;
+}
+
+let parse_free l =
+  assert (l.[1]=' ' && l.[10]=' ' && l.[112]=' ');
+  let seq = int_of_string (String.sub l 2 4) in
+  let detail = int_of_string (String.sub l 6 4) in
+  let message = String.sub l 32 80 in
+  let next_free = parse_bool "next_free" l.[127] in
+  {seq; detail; message; next_free}
+
 
 type t = (** p. 4 *)
   | Header of header
@@ -351,7 +366,7 @@ type t = (** p. 4 *)
   | Movement' of movement'
   | Movement'' of movement''
   | Information of generic_information
-  | Free (* TODO *)
+  | Free of free
   | New_balance of new_balance
   | Footer of footer
 
@@ -362,7 +377,7 @@ let parse l =
   | '8' -> Ok (New_balance (parse_new_balance l))
   | '9' -> Ok (Footer (parse_footer l))
   | '3' -> Ok (Information (parse_generic_information l))
-  | '4' -> Ok Free
+  | '4' -> Ok (Free (parse_free l))
   | '2' ->
     begin match l.[1] with
     | '1' -> Ok (Movement (parse_movement l))
@@ -402,7 +417,9 @@ let dump f =
       | Ok (Movement'' {seq; account; currency; name; _}) ->
         Printf.printf "movement'': #%d %s in %S for %s\n"
           seq account currency name
-      | Ok (Information _ | Free) -> ()
+      | Ok (Information _) -> ()
+      | Ok (Free {seq; message; _}) ->
+        Printf.printf "message: #%d %S\n" seq message
       | Error (`Unknown_record c) ->
         Printf.eprintf "unknown record type %c\n" c;
         exit 1
