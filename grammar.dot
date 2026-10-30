@@ -1,0 +1,32 @@
+//TODO node[style=dashed,penwidth=2]?
+//TODO a->b[style=dashed] with next_*?
+digraph {
+0 [label=header]
+1 [label=old_balance]
+21 [label=movement]
+22 [label="movement'"]
+23 [label="movement''"]
+31 [label=information]
+32 [label="information'"]
+33 [label="information''"]
+4 [label=free]
+8 [label=new_balance]
+9 [label=footer, shape=doublecircle] //FIXME ellipsis?
+0 -> 1 -> 21 -> 31 -> 8 -> 4 -> 9
+4 -> 4
+1 -> 8
+1 -> 9
+8 -> 9
+21 -> 22 -> 23 -> 31
+22 -> 31
+22 -> 21
+22 -> 8
+23 -> 21
+23 -> 8
+31 -> 32 -> 33
+31 -> 21
+32 -> 21
+32 -> 8
+33 -> 21
+33 -> 8
+}
