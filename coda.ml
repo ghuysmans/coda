@@ -196,8 +196,8 @@ type movement = { (** p. 17 *)
   comm: communication;
   posting: Date.t;
   seq': int;
-  next_2_or_3: bool;
-  next_info: bool;
+  next_related_movement: bool;
+  next_related_information: bool;
 }
 
 let parse_movement l =
@@ -212,9 +212,9 @@ let parse_movement l =
   let comm = parse_communication l 62 in
   let posting = Date.parse l 116 in
   let seq' = int_of_string (String.sub l 121 3) in
-  let next_2_or_3 = parse_bool "next_2_or_3" l.[125] in
-  let next_info = parse_bool "next_info" l.[127] in
-  {seq; detail; ref; debit; amount; value; op; comm; posting; seq'; next_2_or_3; next_info}
+  let next_related_movement = parse_bool "next_related_movement" l.[125] in
+  let next_related_information = parse_bool "next_related_information" l.[127] in
+  {seq; detail; ref; debit; amount; value; op; comm; posting; seq'; next_related_movement; next_related_information}
 
 type movement'' = { (** p. 21 *)
   seq: int;
@@ -222,7 +222,7 @@ type movement'' = { (** p. 21 *)
   account: account;
   currency: currency;
   name: string;
-  next_info: bool;
+  next_related_information: bool;
 }
 
 let parse_movement'' l =
@@ -234,8 +234,8 @@ let parse_movement'' l =
   let account = String.sub l 10 34 in
   let currency = String.sub l 44 3 in
   let name = String.sub l 47 35 in
-  let next_info = parse_bool "next_info" l.[127] in
-  {seq; detail; account; currency; name; next_info}
+  let next_related_information = parse_bool "next_related_information" l.[127] in
+  {seq; detail; account; currency; name; next_related_information}
 
 type new_balance = { (** p. 24 *)
   seq: int;
