@@ -371,21 +371,24 @@ type t = (** p. 4 *)
   | Footer of footer
 
 let parse l =
-  match l.[0] with
-  | '0' -> Ok (Header (parse_header l))
-  | '1' -> Ok (Old_balance (parse_old_balance l))
-  | '8' -> Ok (New_balance (parse_new_balance l))
-  | '9' -> Ok (Footer (parse_footer l))
-  | '3' -> Ok (Information (parse_generic_information l))
-  | '4' -> Ok (Free (parse_free l))
-  | '2' ->
-    begin match l.[1] with
-    | '1' -> Ok (Movement (parse_movement l))
-    | '2' -> Ok (Movement' (parse_movement' l))
-    | '3' -> Ok (Movement'' (parse_movement'' l))
-    | c -> Error (`Unknown_family c)
-    end
-  | c -> Error (`Unknown_record c)
+  if String.length l = 128 then
+    match l.[0] with
+    | '0' -> Ok (Header (parse_header l))
+    | '1' -> Ok (Old_balance (parse_old_balance l))
+    | '8' -> Ok (New_balance (parse_new_balance l))
+    | '9' -> Ok (Footer (parse_footer l))
+    | '3' -> Ok (Information (parse_generic_information l))
+    | '4' -> Ok (Free (parse_free l))
+    | '2' ->
+      begin match l.[1] with
+      | '1' -> Ok (Movement (parse_movement l))
+      | '2' -> Ok (Movement' (parse_movement' l))
+      | '3' -> Ok (Movement'' (parse_movement'' l))
+      | c -> Error (`Unknown_family c)
+      end
+    | c -> Error (`Unknown_record c)
+  else
+    Error `Invalid_length
 
 let dump = function
   | Header {creation; dest; vat; _} ->
@@ -430,6 +433,9 @@ let () =
       | Error (`Unknown_family c) ->
         Printf.eprintf "unknown family %c\n" c; (* FIXME *)
         exit 1
+      | Error `Invalid_length ->
+        Printf.eprintf "invalid length\n";
+        exit 2
     done
   with End_of_file ->
     ()
