@@ -310,6 +310,10 @@ let parse_generic_information l =
   let next_unrelated_information = parse_bool "next_unrelated_information" l.[127] in
   {article; seq; detail; next_related_information; next_unrelated_information}
 
+type information = generic_information
+type information' = generic_information
+type information'' = generic_information
+
 type new_balance = { (** p. 24 *)
   seq: int;
   account: account;
@@ -372,7 +376,9 @@ type t = (** p. 4 *)
   | Movement of movement
   | Movement' of movement'
   | Movement'' of movement''
-  | Information of generic_information
+  | Information of information
+  | Information' of information'
+  | Information'' of information''
   | Free of free
   | New_balance of new_balance
   | Footer of footer
@@ -384,7 +390,6 @@ let parse l =
     | '1' -> Ok (Old_balance (parse_old_balance l))
     | '8' -> Ok (New_balance (parse_new_balance l))
     | '9' -> Ok (Footer (parse_footer l))
-    | '3' -> Ok (Information (parse_generic_information l))
     | '4' -> Ok (Free (parse_free l))
     | '2' ->
       begin match l.[1] with
@@ -392,6 +397,14 @@ let parse l =
       | '2' -> Ok (Movement' (parse_movement' l))
       | '3' -> Ok (Movement'' (parse_movement'' l))
       | c -> Error (`Unknown_family c)
+      end
+    | '3' ->
+      let info = parse_generic_information l in
+      begin match info.article with
+      | '1' -> Ok (Information info)
+      | '2' -> Ok (Information' info)
+      | '3' -> Ok (Information'' info)
+      | c -> Error (`Unknown_info c)
       end
     | c -> Error (`Unknown_record c)
   else
@@ -423,7 +436,7 @@ let dump = function
   | Movement'' {seq; account; currency; name; _} ->
     Printf.printf "movement'': #%d %s in %S for %s\n"
       seq account currency name
-  | Information {seq; _} ->
+  | (Information {seq; _} | Information' {seq; _} | Information'' {seq; _}) ->
     Printf.printf "information: #%d\n" seq
   | Free {seq; message; _} ->
     Printf.printf "message: #%d %S\n" seq message
@@ -439,6 +452,9 @@ let () =
         exit 1
       | Error (`Unknown_family c) ->
         Printf.eprintf "unknown family %c\n" c; (* FIXME *)
+        exit 1
+      | Error (`Unknown_info c) ->
+        Printf.eprintf "unknown info article %c\n" c;
         exit 1
       | Error `Invalid_length ->
         Printf.eprintf "invalid length\n";
