@@ -1,2 +1,2 @@
-(ocamlyacc (modules parser))
+(menhir (modules parser))
 (library (name coda))
