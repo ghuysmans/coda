@@ -1,4 +1,4 @@
-open Coda
+open Record
 
 type ('a, 'b, 'c) ott =
   | One of 'a
