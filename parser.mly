@@ -10,7 +10,11 @@
 %token <Coda.new_balance> NEW_BALANCE
 %token <Coda.footer> FOOTER
 %token EOF
-%type <unit> infos_or_epsilon transaction transaction_list free_list statement
+%type <Ast.infos option> infos_or_epsilon
+%type <Ast.transaction> transaction
+%type <Ast.transaction list> transaction_list
+%type <Coda.free list> free_list
+%type <Ast.statement list> statement
 %start statement
 %%
 
