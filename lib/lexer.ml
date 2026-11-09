@@ -1,5 +1,6 @@
 let tokenize f =
   match Record.parse (input_line f) with
+  | exception End_of_file -> Parser.EOF
   | Error _ -> failwith "lexing error"
   | Ok x ->
     match x with
