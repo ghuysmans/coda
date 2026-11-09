@@ -15,14 +15,14 @@ module Date = struct
     }
 end
 
-type header = { (** p. 15 *)
+type header = {
   creation: Date.t;
   dup: bool;
   bank: string;
   ref: string;
   dest: string;
   vat: string;
-}
+} (** p. 15 *)
 
 let parse_header l =
   assert (l.[127] = '2'); (* version *)
@@ -48,7 +48,7 @@ type account = string (* TODO *)
 
 type currency = string (* TODO *)
 
-type old_balance = { (** p. 16 *)
+type old_balance = {
   account: account;
   currency: currency;
   seq: int;
@@ -58,7 +58,7 @@ type old_balance = { (** p. 16 *)
   name: string;
   label: string;
   seq': int;
-}
+} (** p. 16 *)
 
 let parse_bool msg c =
   match c with
@@ -82,7 +82,7 @@ let parse_old_balance l =
   {account; currency; seq; debit; amount; date; name; label; seq'}
 
 module Operation = struct
-  type typ = (** p. 5 *)
+  type typ =
     | Simple
     | Customer
     | Customer_detail
@@ -92,6 +92,7 @@ module Operation = struct
     | Bank_detail''
     | Detailed
     | Detail
+    (** p. 5 *)
 
   let typ_of_char = function
     | '0' -> Simple
@@ -116,7 +117,7 @@ module Operation = struct
     | Detailed -> '3'
     | Detail -> '8'
 
-  type family = (** p. 27 *)
+  type family =
     | Transfer (** SEPA *)
     | Instant_transfer
     | Check
@@ -127,6 +128,7 @@ module Operation = struct
     | International (** non-SEPA *)
     | Foreign_check
     | Other of char * char
+    (** p. 27 *)
 
   let family_of_couple = function
     | '0', '1' -> Transfer
@@ -163,10 +165,11 @@ module Operation = struct
     R (l.[ofs+5], l.[ofs+6], l.[ofs+7])
 end
 
-type communication = (** p. 59 *)
+type communication =
   | Free of string
   | VCS of string
   | Structured of string * string (* TODO write a reassembly function *)
+  (** p. 59 *)
 
 let parse_communication l col =
   let ofs = col-1 in
@@ -185,7 +188,7 @@ let show_communication = function
   | VCS s -> "+++" ^ s ^ "+++"
   | Structured (c, s) -> c ^ "#" ^ s
 
-type movement = { (** p. 17 *)
+type movement = {
   seq: int;
   detail: int;
   ref: string;
@@ -199,7 +202,7 @@ type movement = { (** p. 17 *)
   level: int;
   next_related_movement: bool;
   next_related_information: bool;
-}
+} (** p. 17 *)
 
 let parse_movement l =
   assert (l.[126]=' ');
@@ -218,12 +221,13 @@ let parse_movement l =
   let next_related_information = parse_bool "next_related_information" l.[127] in
   {seq; detail; ref; debit; amount; value; op; comm; posting; seq'; level; next_related_movement; next_related_information}
 
-type r_typ = (** p. 19 *)
+type r_typ =
   | Reject
   | Return
   | Refund
   | Reversal
   | Cancellation
+  (** p. 19 *)
 
 let r_typ_of_char = function
   | '1' -> Reject
@@ -236,9 +240,10 @@ let r_typ_of_char = function
 type iso_return = string (* TODO *)
 
 type iso_category_purpose = string (** TODO see https://www.iso20022.org/external_code_list.page *)
+
 type iso_purpose = string (** TODO see https://www.iso20022.org/external_code_list.page *)
 
-type movement' = { (** p. 19 *)
+type movement' = {
   seq: int;
   detail: int;
   comm': string;
@@ -250,7 +255,7 @@ type movement' = { (** p. 19 *)
   purpose: iso_purpose;
   next_related_movement: bool;
   next_related_information: bool;
-}
+} (** p. 19 *)
 
 let parse_movement' l =
   assert (l.[109] = ' ');
@@ -272,14 +277,14 @@ let parse_movement' l =
   let next_related_information = parse_bool "next_related_information" l.[127] in
   {seq; detail; comm'; customer_ref; bic; r_typ; return; category_purpose; purpose; next_related_movement; next_related_information}
 
-type movement'' = { (** p. 21 *)
+type movement'' = {
   seq: int;
   detail: int;
   account: account;
   currency: currency;
   name: string;
   next_related_information: bool;
-}
+} (** p. 21 *)
 
 let parse_movement'' l =
   assert (l.[125] = '0');
@@ -314,7 +319,7 @@ type information = generic_information
 type information' = generic_information
 type information'' = generic_information
 
-type new_balance = { (** p. 24 *)
+type new_balance = {
   seq: int;
   account: account;
   currency: currency;
@@ -322,7 +327,7 @@ type new_balance = { (** p. 24 *)
   amount: int;
   date: Date.t;
   next_free: bool;
-}
+} (** p. 24 *)
 
 let parse_new_balance l =
   let seq = int_of_string (String.sub l 1 3) in
@@ -334,12 +339,12 @@ let parse_new_balance l =
   let next_free = parse_bool "next_free" l.[127] in
   {seq; account; currency; debit; amount; date; next_free}
 
-type footer = { (** p. 26 *)
+type footer = {
   records: int; (** 1, 2.1, 2.2, 2.3, 3.1, 3.2, 3.3, 8 *)
   total_debit: int; (** type 2 with detail=0 *)
   total_credit: int; (** type 2 with detail=0 *)
   next_file: bool;
-}
+} (** p. 26 *)
 
 let parse_footer l =
   assert (l.[1]=' ' && l.[52]=' ');
@@ -354,12 +359,12 @@ let parse_footer l =
   in
   {records; total_debit; total_credit; next_file}
 
-type free = { (** p. 25 *)
+type free = {
   seq: int;
   detail: int;
   message: string;
   next_free: bool;
-}
+} (** p. 25 *)
 
 let parse_free l =
   assert (l.[1]=' ' && l.[10]=' ' && l.[112]=' ');
@@ -370,7 +375,7 @@ let parse_free l =
   {seq; detail; message; next_free}
 
 
-type t = (** p. 4 *)
+type t =
   | Header of header
   | Old_balance of old_balance
   | Movement of movement
@@ -382,6 +387,7 @@ type t = (** p. 4 *)
   | Free of free
   | New_balance of new_balance
   | Footer of footer
+  (** p. 4 *)
 
 let parse l =
   if String.length l = 128 then
@@ -414,7 +420,7 @@ let dump = function
   | Header {creation; dest; vat; _} ->
     Printf.printf "header: %d/%d/%d, dest %S, tva %S\n"
       creation.day creation.month creation.year dest vat
-  | Old_balance {account; currency; seq; debit; amount; date; name; label; seq'} ->
+  | Old_balance {seq; amount; date; seq'; _} ->
     Printf.printf "old balance: %d/%d/%d#%d %d #%d\n"
       date.day date.month date.year seq amount seq';
   | New_balance {seq; debit; amount; date; _} ->
