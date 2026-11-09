@@ -1,2 +1,2 @@
-(menhir (modules parser))
-(library (name coda))
+(menhir (modules parser) (flags --table))
+(library (name coda) (libraries menhirLib))

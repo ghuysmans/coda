@@ -15,3 +15,12 @@ let tokenize f =
     | Free f -> Parser.FREE f
     | New_balance nb -> Parser.NEW_BALANCE nb
     | Footer x -> Parser.FOOTER x
+
+let supplier init f =
+  let line = ref 1 in
+  fun () ->
+    let tok = tokenize f in
+    let st = !line * 129 in (* FIXME check line ending *)
+    let pos = {init with Lexing.pos_lnum=(!line); pos_bol=st; pos_cnum=st} in
+    let pos' = {pos with pos_cnum = st+128} in
+    tok, pos, pos'

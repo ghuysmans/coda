@@ -32,6 +32,7 @@ let dump = function
     Printf.printf "message: #%d %S\n" seq message
 
 
+(*
 let () =
   try
     while true do
@@ -52,10 +53,15 @@ let () =
     done
   with End_of_file ->
     ()
-
-(*
-let () =
-  let f _ = failwith "supp" in
-  let x = failwith "meh" in
-  Parser.MenhirInterpreter.loop f (Parser.Incremental.statement x)
 *)
+
+let () =
+  let t =
+    let pos = {Lexing.dummy_pos with pos_fname="<stdin>"} in
+    Parser.MenhirInterpreter.loop
+      (Lexer.supplier pos stdin)
+      (Parser.Incremental.statement pos)
+  in
+  Printf.printf "%d/%d/%d len=%d\n"
+    t.header.creation.day t.header.creation.month t.header.creation.year
+    (List.length t.transactions)
