@@ -5,8 +5,17 @@ type ('a, 'b, 'c) ott =
   | Two of 'a * 'b
   | Three of 'a * 'b * 'c
 
+let count = function
+  | One _ -> 1
+  | Two _ -> 2
+  | Three _ -> 3
+
 type infos = (information, information', information'') ott
 type transaction = (movement, movement', movement'') ott * infos option
+
+let movement_of_transaction = function
+  | (One m | Two (m, _) | Three (m, _, _)), _ -> m
+
 type statement = {
   header: header;
   old_balance: old_balance;
@@ -15,3 +24,54 @@ type statement = {
   free_list: free list;
   footer: footer;
 }
+
+let count_records {transactions; new_balance; _} =
+  1 (* old_balance *) +
+  (if new_balance = None then 0 else 1) +
+  List.fold_left (fun acc (m, io) ->
+    acc +
+    count m +
+    match io with
+    | None -> 0
+    | Some i -> count i
+  ) 0 transactions
+
+let value txn =
+  let m = movement_of_transaction txn in
+  match m.op with
+  | Record.Operation.Simple, _, _, _ -> m.amount
+  | _ -> failwith "Ast.value: unhandled operation type"
+
+let check ?dt ?vat ({header; old_balance; transactions; new_balance; footer; _} as stmt) =
+  match dt with
+  | Some dt when dt<>header.creation ->
+    Error `Creation_date
+  | _ ->
+    match vat with
+    | Some vat when vat<>header.vat ->
+      Error `VAT
+    | _ ->
+      let td, tc =
+        List.fold_left (fun (td, tc) x ->
+          let amount = value x in
+          if amount > 0 then td + amount, tc
+          else td, tc - amount (* negative *)
+        ) (0, 0) transactions
+      in
+      if count_records stmt <> footer.records then
+        Error `Count
+      else
+        if footer.total_debit <> td then
+          Error `Total_debit
+        else
+          if footer.total_credit <> tc then
+            Error `Total_credit
+          else
+            match new_balance with
+            | None -> Ok stmt
+            | Some b ->
+              let nb = old_balance.amount + td - tc in
+              if nb <> b.amount then
+                Error `New_balance
+              else
+                Ok stmt

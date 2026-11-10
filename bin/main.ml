@@ -14,7 +14,6 @@ let dump = function
     Printf.printf "footer: rec=%d d=%d c=%d %s\n"
       records total_debit total_credit
       (if next_file then "next" else "last")
-    (* TODO compare counts and balances *)
   | Movement {seq; ref; amount; value; op = typ, fam, _, _; comm; _} ->
     let opt = Record.Operation.char_of_typ typ in
     let f1, f2 = Record.Operation.couple_of_family fam in
@@ -62,6 +61,22 @@ let () =
       (Lexer.supplier pos stdin)
       (Parser.Incremental.statement pos)
   in
-  Printf.printf "%d/%d/%d len=%d\n"
-    t.header.creation.day t.header.creation.month t.header.creation.year
-    (List.length t.transactions)
+  match Ast.check t with
+  | Ok t ->
+    Printf.printf "%d/%d/%d len=%d count=%d calc=%d\n"
+      t.header.creation.day t.header.creation.month t.header.creation.year
+      (List.length t.transactions)
+      t.footer.records
+      (Ast.count_records t)
+  | Error `Count ->
+    Printf.eprintf "error: count mismatch\n"
+  | Error `Creation_date ->
+    Printf.eprintf "error: creation date mismatch\n"
+  | Error `New_balance ->
+    Printf.eprintf "error: balance mismatch\n"
+  | Error `Total_credit ->
+    Printf.eprintf "error: total credit mismatch\n"
+  | Error `Total_debit ->
+    Printf.eprintf "error: total debit mismatch\n"
+  | Error `VAT ->
+    Printf.eprintf "error: VAT number mismatch\n"
