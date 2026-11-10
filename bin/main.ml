@@ -7,20 +7,20 @@ let dump = function
   | Old_balance {seq; amount; date; seq'; _} ->
     Printf.printf "old balance: %d/%d/%d#%d %d #%d\n"
       date.day date.month date.year seq amount seq';
-  | New_balance {seq; debit; amount; date; _} ->
+  | New_balance {seq; amount; date; _} ->
     Printf.printf "new balance: %d/%d/%d#%d %d\n"
-      date.day date.month date.year seq (if debit then -amount else amount)
+      date.day date.month date.year seq amount
   | Footer {records; total_debit; total_credit; next_file} ->
     Printf.printf "footer: rec=%d d=%d c=%d %s\n"
       records total_debit total_credit
       (if next_file then "next" else "last")
     (* TODO compare counts and balances *)
-  | Movement {seq; ref; debit; amount; value; op = typ, fam, _, _; comm; _} ->
+  | Movement {seq; ref; amount; value; op = typ, fam, _, _; comm; _} ->
     let opt = Record.Operation.char_of_typ typ in
     let f1, f2 = Record.Operation.couple_of_family fam in
     Printf.printf "movement: %d/%d/%d#%d %S T%cF%c%c %d€ %S\n"
       value.day value.month value.year seq ref opt f1 f2
-      (if debit then -amount else amount) (Record.show_communication comm)
+      amount (Record.show_communication comm)
   | Movement' {seq; comm'; bic; _} ->
     Printf.printf "movement': #%d ... %S BIC %s\n" seq comm' bic
   | Movement'' {seq; account; currency; name; _} ->

@@ -48,17 +48,7 @@ type account = string (* TODO *)
 
 type currency = string (* TODO *)
 
-type old_balance = {
-  account: account;
-  currency: currency;
-  seq: int;
-  debit: bool;
-  amount: int;
-  date: Date.t;
-  name: string;
-  label: string;
-  seq': int;
-} (** p. 16 *)
+type amount = int (** debit>0, credit<0 *)
 
 let parse_bool msg c =
   match c with
@@ -66,20 +56,34 @@ let parse_bool msg c =
   | '0' -> false
   | _ -> invalid_arg msg
 
-let parse_debit = parse_bool "debit"
+let parse_amount s col =
+  let ofs = col-1 in
+  let debit = parse_bool "debit" s.[ofs] in
+  let n = int_of_string (String.sub s (ofs+1) 15) in
+  if debit then n else -n
+
+type old_balance = {
+  account: account;
+  currency: currency;
+  seq: int;
+  amount: amount;
+  date: Date.t;
+  name: string;
+  label: string;
+  seq': int;
+} (** p. 16 *)
 
 let parse_old_balance l =
   assert (l.[1] = '2'); (* Belgian IBAN, TODO handle other types *)
   let seq = int_of_string (String.sub l 2 3) in
   let account = String.sub l 5 34 in
   let currency = String.sub l 39 3 in
-  let debit = parse_debit l.[42] in
-  let amount = int_of_string (String.sub l 43 15) in
+  let amount = parse_amount l 43 in
   let date = Date.parse l 59 in
   let name = String.sub l 64 26 in
   let label = String.sub l 90 35 in
   let seq' = int_of_string (String.sub l 125 3) in
-  {account; currency; seq; debit; amount; date; name; label; seq'}
+  {account; currency; seq; amount; date; name; label; seq'}
 
 module Operation = struct
   type typ =
@@ -192,8 +196,7 @@ type movement = {
   seq: int;
   detail: int;
   ref: string;
-  debit: bool;
-  amount: int;
+  amount: amount;
   value: Date.t;
   op: Operation.t;
   comm: communication;
@@ -209,8 +212,7 @@ let parse_movement l =
   let seq = int_of_string (String.sub l 2 4) in
   let detail = int_of_string (String.sub l 6 4) in
   let ref = String.sub l 10 21 in
-  let debit = parse_debit l.[31] in
-  let amount = int_of_string (String.sub l 32 15) in
+  let amount = parse_amount l 32 in
   let value = Date.parse l 48 in
   let op = Operation.parse l 54 in
   let comm = parse_communication l 62 in
@@ -219,7 +221,7 @@ let parse_movement l =
   let level = int_of_string (String.sub l 124 1) in
   let next_related_movement = parse_bool "next_related_movement" l.[125] in
   let next_related_information = parse_bool "next_related_information" l.[127] in
-  {seq; detail; ref; debit; amount; value; op; comm; posting; seq'; level; next_related_movement; next_related_information}
+  {seq; detail; ref; amount; value; op; comm; posting; seq'; level; next_related_movement; next_related_information}
 
 type r_typ =
   | Reject
@@ -323,8 +325,7 @@ type new_balance = {
   seq: int;
   account: account;
   currency: currency;
-  debit: bool;
-  amount: int;
+  amount: amount;
   date: Date.t;
   next_free: bool;
 } (** p. 24 *)
@@ -333,11 +334,10 @@ let parse_new_balance l =
   let seq = int_of_string (String.sub l 1 3) in
   let account = String.sub l 4 34 in
   let currency = String.sub l 38 3 in
-  let debit = parse_debit l.[41] in
-  let amount = int_of_string (String.sub l 42 15) in
+  let amount = parse_amount l 42 in
   let date = Date.parse l 58 in
   let next_free = parse_bool "next_free" l.[127] in
-  {seq; account; currency; debit; amount; date; next_free}
+  {seq; account; currency; amount; date; next_free}
 
 type footer = {
   records: int; (** 1, 2.1, 2.2, 2.3, 3.1, 3.2, 3.3, 8 *)
