@@ -39,8 +39,8 @@ let count_records {transactions; new_balance; _} =
 let value txn =
   let m = movement_of_transaction txn in
   match m.op with
-  | Record.Operation.Simple, _, _, _ -> m.amount
-  | _ -> failwith "Ast.value: unhandled operation type"
+  | Record.Operation.Simple, _, _, _ -> Ok m.amount
+  | _ -> Error `Unhandled_operation_type
 
 let check ?dt ?vat ({header; old_balance; transactions; new_balance; footer; _} as stmt) =
   match dt with
@@ -51,12 +51,14 @@ let check ?dt ?vat ({header; old_balance; transactions; new_balance; footer; _} 
     | Some vat when vat<>header.vat ->
       Error `VAT
     | _ ->
-      let td, tc =
-        List.fold_left (fun (td, tc) x ->
-          let amount = value x in
-          if amount > 0 then td + amount, tc
-          else td, tc - amount (* negative *)
-        ) (0, 0) transactions
+      let (let*) = Result.bind in
+      let* td, tc =
+        List.fold_left (fun r x ->
+          let* td, tc = r in
+          let* amount = value x in
+          if amount > 0 then Ok (td + amount, tc)
+          else Ok (td, tc - amount) (* negative *)
+        ) (Ok (0, 0)) transactions
       in
       if count_records stmt <> footer.records then
         Error `Count

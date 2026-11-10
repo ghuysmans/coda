@@ -37,6 +37,7 @@ let () =
     while true do
       match Record.parse (read_line ()) with
       | Ok t -> dump t
+      (* TODO wrap errors in tokenize then write my own loop function? *)
       | Error (`Unknown_record c) ->
         Printf.eprintf "unknown record type %c\n" c;
         exit 1
@@ -63,11 +64,9 @@ let () =
   in
   match Ast.check t with
   | Ok t ->
-    Printf.printf "%d/%d/%d len=%d count=%d calc=%d\n"
+    Printf.printf "%d/%d/%d len=%d\n"
       t.header.creation.day t.header.creation.month t.header.creation.year
       (List.length t.transactions)
-      t.footer.records
-      (Ast.count_records t)
   | Error `Count ->
     Printf.eprintf "error: count mismatch\n"
   | Error `Creation_date ->
@@ -80,3 +79,5 @@ let () =
     Printf.eprintf "error: total debit mismatch\n"
   | Error `VAT ->
     Printf.eprintf "error: VAT number mismatch\n"
+  | Error `Unhandled_operation_type ->
+    Printf.eprintf "error: unhandled operation type\n"
