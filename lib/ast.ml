@@ -39,7 +39,7 @@ let count_records {transactions; new_balance; _} =
 let value txn =
   let m = movement_of_transaction txn in
   match m.op with
-  | Record.Operation.Simple, _, _, _ -> Ok m.amount
+  | Record.Operation.Simple, _, _, _ -> Ok (if m.detail = 0 then m.amount else 0)
   | _ -> Error `Unhandled_operation_type
 
 let check ?dt ?vat ({header; old_balance; transactions; new_balance; footer; _} as stmt) =
