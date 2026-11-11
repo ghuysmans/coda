@@ -1,1 +1,1 @@
-(executable (name main) (libraries coda))
+(executable (name main) (libraries coda unix str))
