@@ -44,9 +44,69 @@ let parse_header l =
   in
   {creation; dup; bank; ref; dest; vat}
 
-type account = string (* TODO *)
+let get_string_or_blank ~len l ofs =
+  match String.(trim (sub l ofs len)) with
+  | "" -> None
+  | x -> Some x
 
-type currency = string (* TODO *)
+type iso_currency = string (** ISO 4217 *)
+
+type iso_country = string (** ISO 3166-1 alpha-2 *)
+
+type 'ext iban = {
+  number: string;
+  extension: 'ext;
+  currency: iso_currency option;
+}
+
+type account =
+  | BBAN_national of {
+    number: string;
+    currency: iso_currency option;
+    qualification: char;
+    country: iso_country option;
+    extension: string option;
+  }
+  | BBAN_foreign of {
+    number: string;
+    currency: iso_currency option;
+  }
+  | IBAN_national of string option iban
+  | IBAN_foreign of unit iban
+  (** p. 12 *)
+
+let currency = function
+  | BBAN_national {currency; _} -> currency
+  | BBAN_foreign {currency; _} -> currency
+  | IBAN_national {currency; _} -> currency
+  | IBAN_foreign {currency; _} -> currency
+
+let parse_account l typ col =
+  let ofs = col-1 in
+  match typ with
+  | '0' ->
+    assert (l.[ofs+12]=' ' && l.[ofs+19]=' ');
+    let number = String.(trim (sub l ofs 12)) in
+    let currency = get_string_or_blank ~len:3 l 13 in
+    let qualification = l.[ofs+16] in
+    let country = get_string_or_blank ~len:2 l 17 in
+    let extension = get_string_or_blank ~len:15 l 22 in
+    BBAN_national {number; currency; qualification; country; extension}
+  | '1' ->
+    let number = String.(trim (sub l ofs 34)) in
+    let currency = get_string_or_blank ~len:3 l 34 in
+    BBAN_foreign {number; currency}
+  | '2' ->
+    let number = String.(trim (sub l ofs 31)) in
+    let extension = get_string_or_blank ~len:3 l 31 in
+    let currency = get_string_or_blank ~len:3 l 34 in
+    IBAN_national {number; currency; extension}
+  | '3' ->
+    let number = String.(trim (sub l ofs 34)) in
+    let currency = get_string_or_blank ~len:3 l 34 in
+    IBAN_foreign {number; currency; extension=()}
+  | _ ->
+    failwith "Record.parse_account"
 
 type amount = int (** debit>0, credit<0 *)
 
@@ -64,7 +124,6 @@ let parse_amount s col =
 
 type old_balance = {
   account: account;
-  currency: currency;
   seq: int;
   amount: amount;
   date: Date.t;
@@ -74,16 +133,14 @@ type old_balance = {
 } (** p. 16 *)
 
 let parse_old_balance l =
-  assert (l.[1] = '2'); (* Belgian IBAN, TODO handle other types *)
   let seq = int_of_string (String.sub l 2 3) in
-  let account = String.(trim (sub l 5 34)) in
-  let currency = String.sub l 39 3 in
+  let account = parse_account l l.[1] 35 in
   let amount = parse_amount l 43 in
   let date = Date.parse l 59 in
   let name = String.(trim (sub l 64 26)) in
   let label = String.(trim (sub l 90 35)) in
   let seq' = int_of_string (String.sub l 125 3) in
-  {account; currency; seq; amount; date; name; label; seq'}
+  {account; seq; amount; date; name; label; seq'}
 
 module Operation = struct
   type typ =
@@ -282,8 +339,8 @@ let parse_movement' l =
 type movement'' = {
   seq: int;
   detail: int;
-  account: account;
-  currency: currency;
+  account: string;
+  currency: iso_currency;
   name: string;
   next_related_information: bool;
 } (** p. 21 *)
@@ -323,8 +380,8 @@ type information'' = generic_information
 
 type new_balance = {
   seq: int;
-  account: account;
-  currency: currency;
+  account: string;
+  currency: iso_currency;
   amount: amount;
   date: Date.t;
   next_free: bool;
