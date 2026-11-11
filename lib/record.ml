@@ -34,9 +34,9 @@ let parse_header l =
     | 'D' -> true
     | _ -> invalid_arg "dup"
   in
-  let bank = String.sub l 11 3 in
-  let ref = String.sub l 24 10 in
-  let dest = String.sub l 34 26 in
+  let bank = String.(trim (sub l 11 3)) in
+  let ref = String.(trim (sub l 24 10)) in
+  let dest = String.(trim (sub l 34 26)) in
   let vat =
     let titu = String.sub l 71 11 in
     assert (titu.[0]='0');
@@ -76,12 +76,12 @@ type old_balance = {
 let parse_old_balance l =
   assert (l.[1] = '2'); (* Belgian IBAN, TODO handle other types *)
   let seq = int_of_string (String.sub l 2 3) in
-  let account = String.sub l 5 34 in
+  let account = String.(trim (sub l 5 34)) in
   let currency = String.sub l 39 3 in
   let amount = parse_amount l 43 in
   let date = Date.parse l 59 in
-  let name = String.sub l 64 26 in
-  let label = String.sub l 90 35 in
+  let name = String.(trim (sub l 64 26)) in
+  let label = String.(trim (sub l 90 35)) in
   let seq' = int_of_string (String.sub l 125 3) in
   {account; currency; seq; amount; date; name; label; seq'}
 
@@ -211,7 +211,7 @@ let parse_movement l =
   assert (l.[126]=' ');
   let seq = int_of_string (String.sub l 2 4) in
   let detail = int_of_string (String.sub l 6 4) in
-  let ref = String.sub l 10 21 in
+  let ref = String.(trim (sub l 10 21)) in
   let amount = parse_amount l 32 in
   let value = Date.parse l 48 in
   let op = Operation.parse l 54 in
@@ -264,9 +264,9 @@ let parse_movement' l =
   assert (l.[126] = ' ');
   let seq = int_of_string (String.sub l 2 4) in
   let detail = int_of_string (String.sub l 6 4) in
-  let comm' = String.sub l 10 53 in
-  let customer_ref = String.sub l 63 35 in
-  let bic = String.sub l 98 11 in
+  let comm' = String.sub l 10 53 in (* can't trim! *)
+  let customer_ref = String.(trim (sub l 63 35)) in
+  let bic = String.(trim (sub l 98 11)) in
   let r_typ =
     match l.[112] with
     | ' ' -> None
@@ -293,9 +293,9 @@ let parse_movement'' l =
   assert (l.[126] = ' ');
   let seq = int_of_string (String.sub l 2 4) in
   let detail = int_of_string (String.sub l 6 4) in
-  let account = String.sub l 10 34 in
+  let account = String.(trim (sub l 10 34)) in
   let currency = String.sub l 44 3 in
-  let name = String.sub l 47 35 in
+  let name = String.(trim (sub l 47 35)) in
   let next_related_information = parse_bool "next_related_information" l.[127] in
   {seq; detail; account; currency; name; next_related_information}
 
@@ -332,7 +332,7 @@ type new_balance = {
 
 let parse_new_balance l =
   let seq = int_of_string (String.sub l 1 3) in
-  let account = String.sub l 4 34 in
+  let account = String.(trim (sub l 4 34)) in
   let currency = String.sub l 38 3 in
   let amount = parse_amount l 42 in
   let date = Date.parse l 58 in
@@ -370,7 +370,7 @@ let parse_free l =
   assert (l.[1]=' ' && l.[10]=' ' && l.[112]=' ');
   let seq = int_of_string (String.sub l 2 4) in
   let detail = int_of_string (String.sub l 6 4) in
-  let message = String.sub l 32 80 in
+  let message = String.(trim (sub l 32 80)) in
   let next_free = parse_bool "next_free" l.[127] in
   {seq; detail; message; next_free}
 
