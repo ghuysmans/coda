@@ -55,19 +55,19 @@ let () =
     ()
 *)
 
-(* TODO read multiple files *)
-(* TODO extract archive entries (using libarchive bindings) *)
+(* TODO extract archive entries (using libarchive bindings?) *)
 (* TODO generate a CSV with custom columns *)
 
 let () =
-  let fn, ledger =
+  let fn, ic, ledger =
     let show_usage () =
       Printf.eprintf "usage: %s [-f act.ledger] input.cod\n" Sys.argv.(0);
     in
     match Sys.argv with
     | [| _; "-h" |] | [| _; "--help" |] -> show_usage (); exit 0
-    | [| _; fn |] -> fn, None
-    | [| _; "-f"; ledger; fn |] -> fn, Some ledger
+    | [| _; "-" |] -> "<stdin>", stdin, None
+    | [| _; fn |] -> fn, open_in fn, None
+    | [| _; "-f"; ledger; fn |] -> fn, open_in fn, Some ledger
     | _ -> show_usage (); exit 1
   in
   let lookup, oc =
@@ -102,7 +102,6 @@ let () =
   in
   let l =
     let pos = {Lexing.dummy_pos with pos_fname=fn} in
-    let ic = open_in fn in
     Parser.MenhirInterpreter.loop
       (Lexer.supplier pos ic)
       (Parser.Incremental.multi_statement pos)
