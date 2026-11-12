@@ -100,54 +100,55 @@ let () =
     | None ->
       stdout
   in
-  let t =
+  let l =
     let pos = {Lexing.dummy_pos with pos_fname=fn} in
     let ic = open_in fn in
     Parser.MenhirInterpreter.loop
       (Lexer.supplier pos ic)
-      (Parser.Incremental.single_statement pos)
+      (Parser.Incremental.multi_statement pos)
   in
-  match Ast.check t with
-  | Ok t ->
-    let once = ref true in
-    Printf.eprintf "%d/%d/%d len=%d\n"
-      t.header.creation.day t.header.creation.month t.header.creation.year
-      (List.length t.transactions);
-    List.iter (fun ((m, _, m''), _) ->
-      if lookup m.Record.ref then
-        Printf.eprintf "dup %S\n" m.ref
-      else (
-        Printf.eprintf "new %S\n" m.ref;
-        if !once then (
-          Printf.fprintf oc "\n;imported from %S\n" fn;
-          once := false;
-        );
-        Printf.fprintf oc "%d/%02d/%02d  %s ;%s\n    A:Banque        %g€\n"
-          m.value.year m.value.month m.value.day
-          (Record.show_communication m.comm) m.ref
-          (float m.amount /. -1000.);
-        let name =
-          match m'' with
-          | Some {Record.name; _} -> name
-          | _ -> "TODO"
-        in
-        if m.amount > 0 then
-          Printf.fprintf oc "    Ch:%s\n" name
-        else
-          Printf.fprintf oc "    Pr:%s\n" name
-      )
-    ) t.transactions
-  | Error `Count ->
-    Printf.eprintf "error: count mismatch\n"
-  | Error `Creation_date ->
-    Printf.eprintf "error: creation date mismatch\n"
-  | Error `New_balance ->
-    Printf.eprintf "error: balance mismatch\n"
-  | Error `Total_credit ->
-    Printf.eprintf "error: total credit mismatch\n"
-  | Error `Total_debit ->
-    Printf.eprintf "error: total debit mismatch\n"
-  | Error `VAT ->
-    Printf.eprintf "error: VAT number mismatch\n"
-  | Error `Unhandled_operation_type ->
-    Printf.eprintf "error: unhandled operation type\n"
+  let once = ref true in
+  List.iter (fun t ->
+    match Ast.check t with
+    | Ok t ->
+      Printf.eprintf "%d/%d/%d len=%d\n"
+        t.header.creation.day t.header.creation.month t.header.creation.year
+        (List.length t.transactions);
+      List.iter (fun ((m, _, m''), _) ->
+        if lookup m.Record.ref then
+          Printf.eprintf "dup %S\n" m.ref
+        else (
+          Printf.eprintf "new %S\n" m.ref;
+          if !once then (
+            Printf.fprintf oc "\n;imported from %S\n" fn;
+            once := false;
+          );
+          Printf.fprintf oc "%d/%02d/%02d  %s ;%s\n    A:Banque        %g€\n"
+            m.value.year m.value.month m.value.day
+            (Record.show_communication m.comm) m.ref
+            (float m.amount /. -1000.);
+          let name =
+            match m'' with
+            | Some {Record.name; _} when name<>"" -> name
+            | _ -> "TODO"
+          in
+          if m.amount > 0 then
+            Printf.fprintf oc "    Ch:%s\n" name
+          else
+            Printf.fprintf oc "    Pr:%s\n" name
+        )
+      ) t.transactions
+    | Error e ->
+      let m =
+        match e with
+        | `Count -> "count mismatch"
+        | `Creation_date -> "creation date mismatch"
+        | `New_balance -> "balance mismatch"
+        | `Total_credit -> "total credit mismatch"
+        | `Total_debit -> "total debit mismatch"
+        | `VAT -> "VAT number mismatch"
+        | `Unhandled_operation_type -> "unhandled operation type"
+      in
+      Printf.eprintf "error: %s\n" m;
+      exit 2
+  ) l
