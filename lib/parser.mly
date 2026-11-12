@@ -21,9 +21,7 @@ infos:
 | i=INFORMATION j=INFORMATION2 { Ast.Two (i, j) }
 | i=INFORMATION j=INFORMATION2 k=INFORMATION3 { Ast.Three (i, j, k) }
 transaction:
-| m=MOVEMENT i=infos? { Ast.One m, i }
-| m=MOVEMENT n=MOVEMENT2 i=infos? { Ast.Two (m, n), i }
-| m=MOVEMENT n=MOVEMENT2 o=MOVEMENT3 i=infos? { Ast.Three (m, n, o), i }
+| m=MOVEMENT n=MOVEMENT2? o=MOVEMENT3? i=infos? { (m, n, o), i }
 statement:
 | h=HEADER o=OLD_BALANCE t=transaction* n=NEW_BALANCE fr=FREE* ft=FOOTER EOF {
   {Ast.header=h; old_balance=o; transactions=t; new_balance=Some n; footer=ft;

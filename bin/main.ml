@@ -113,8 +113,7 @@ let () =
     Printf.eprintf "%d/%d/%d len=%d\n"
       t.header.creation.day t.header.creation.month t.header.creation.year
       (List.length t.transactions);
-    List.iter (fun x ->
-      let m = Ast.movement_of_transaction x in
+    List.iter (fun ((m, _, m''), _) ->
       if lookup m.Record.ref then
         Printf.eprintf "dup %S\n" m.ref
       else (
@@ -128,8 +127,8 @@ let () =
           (Record.show_communication m.comm) m.ref
           (float m.amount /. -1000.);
         let name =
-          match x with
-          | Ast.Three (_, _, {Record.name; _}), _ -> name
+          match m'' with
+          | Some {Record.name; _} -> name
           | _ -> "TODO"
         in
         if m.amount > 0 then

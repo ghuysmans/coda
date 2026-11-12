@@ -11,10 +11,7 @@ let count = function
   | Three _ -> 3
 
 type infos = (information, information', information'') ott
-type transaction = (movement, movement', movement'') ott * infos option
-
-let movement_of_transaction = function
-  | (One m | Two (m, _) | Three (m, _, _)), _ -> m
+type transaction = (movement * movement' option * movement'' option) * infos option
 
 type statement = {
   header: header;
@@ -28,16 +25,17 @@ type statement = {
 let count_records {transactions; new_balance; _} =
   1 (* old_balance *) +
   (if new_balance = None then 0 else 1) +
-  List.fold_left (fun acc (m, io) ->
+  List.fold_left (fun acc ((_, m', m''), io) ->
     acc +
-    count m +
+    1 (* m *) +
+    (if m' = None then 0 else 1) +
+    (if m'' = None then 0 else 1) +
     match io with
     | None -> 0
     | Some i -> count i
   ) 0 transactions
 
-let value txn =
-  let m = movement_of_transaction txn in
+let value ((m, _, _), _) =
   match m.op with
   | Record.Operation.Simple, _, _, _ -> Ok (if m.detail = 0 then m.amount else 0)
   | _ -> Error `Unhandled_operation_type
