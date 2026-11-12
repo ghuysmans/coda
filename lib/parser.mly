@@ -12,8 +12,9 @@
 %token EOF
 %type <Ast.infos> infos
 %type <Ast.transaction> transaction
-%type <Ast.statement> statement
-%start statement
+%type <Ast.statement> statement single_statement
+%type <Ast.statement list> multi_statement
+%start single_statement multi_statement
 %%
 
 infos:
@@ -23,11 +24,13 @@ infos:
 transaction:
 | m=MOVEMENT n=MOVEMENT2? o=MOVEMENT3? i=infos? { (m, n, o), i }
 statement:
-| h=HEADER o=OLD_BALANCE t=transaction* n=NEW_BALANCE fr=FREE* ft=FOOTER EOF {
+| h=HEADER o=OLD_BALANCE t=transaction* n=NEW_BALANCE fr=FREE* ft=FOOTER {
   {Ast.header=h; old_balance=o; transactions=t; new_balance=Some n; footer=ft;
    free_list=fr}
 }
-| h=HEADER o=OLD_BALANCE ft=FOOTER EOF { (* "empty" *)
+| h=HEADER o=OLD_BALANCE ft=FOOTER { (* "empty" *)
   {Ast.header=h; old_balance=o; transactions=[]; new_balance=None; footer=ft;
    free_list=[]}
 }
+single_statement: s=statement EOF { s }
+multi_statement: l=statement* EOF { l }

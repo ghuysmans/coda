@@ -105,7 +105,7 @@ let () =
     let ic = open_in fn in
     Parser.MenhirInterpreter.loop
       (Lexer.supplier pos ic)
-      (Parser.Incremental.statement pos)
+      (Parser.Incremental.single_statement pos)
   in
   match Ast.check t with
   | Ok t ->
