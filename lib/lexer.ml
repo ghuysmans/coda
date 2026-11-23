@@ -1,20 +1,8 @@
 let tokenize f =
   match Record.parse (input_line f) with
-  | exception End_of_file -> Parser.EOF
+  | exception End_of_file -> Record.EOF
   | Error _ -> failwith "lexing error"
-  | Ok x ->
-    match x with
-    | Header h -> Parser.HEADER h
-    | Old_balance ob -> Parser.OLD_BALANCE ob
-    | Movement m -> Parser.MOVEMENT m
-    | Movement' m -> Parser.MOVEMENT2 m
-    | Movement'' m -> Parser.MOVEMENT3 m
-    | Information i -> Parser.INFORMATION i
-    | Information' i -> Parser.INFORMATION2 i
-    | Information'' i -> Parser.INFORMATION3 i
-    | Free f -> Parser.FREE f
-    | New_balance nb -> Parser.NEW_BALANCE nb
-    | Footer x -> Parser.FOOTER x
+  | Ok x -> x
 
 let supplier init f =
   let line = ref 1 in

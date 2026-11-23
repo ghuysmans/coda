@@ -1,34 +1,36 @@
 open Coda
 
 let dump = function (* TODO enable with -d *)
-  | Record.Header {creation; dest; vat; _} ->
+  | Record.HEADER {creation; dest; vat; _} ->
     Printf.printf "header: %d/%d/%d, dest %S, tva %S\n"
       creation.day creation.month creation.year dest vat
-  | Old_balance {seq; amount; date; seq'; _} ->
+  | OLD_BALANCE {seq; amount; date; seq'; _} ->
     Printf.printf "old balance: %d/%d/%d#%d %d #%d\n"
       date.day date.month date.year seq amount seq';
-  | New_balance {seq; amount; date; _} ->
+  | NEW_BALANCE {seq; amount; date; _} ->
     Printf.printf "new balance: %d/%d/%d#%d %d\n"
       date.day date.month date.year seq amount
-  | Footer {records; total_debit; total_credit; next_file} ->
+  | FOOTER {records; total_debit; total_credit; next_file} ->
     Printf.printf "footer: rec=%d d=%d c=%d %s\n"
       records total_debit total_credit
       (if next_file then "next" else "last")
-  | Movement {seq; ref; amount; value; op = typ, fam, _, _; comm; _} ->
+  | MOVEMENT {seq; ref; amount; value; op = typ, fam, _, _; comm; _} ->
     let opt = Record.Operation.char_of_typ typ in
     let f1, f2 = Record.Operation.couple_of_family fam in
     Printf.printf "movement: %d/%d/%d#%d %S T%cF%c%c %d€ %S\n"
       value.day value.month value.year seq ref opt f1 f2
       amount (Record.show_communication comm)
-  | Movement' {seq; comm'; bic; _} ->
+  | MOVEMENT2 {seq; comm'; bic; _} ->
     Printf.printf "movement': #%d ... %S BIC %s\n" seq comm' bic
-  | Movement'' {seq; account; currency; name; _} ->
+  | MOVEMENT3 {seq; account; currency; name; _} ->
     Printf.printf "movement'': #%d %s in %S for %s\n"
       seq account currency name
-  | (Information {seq; _} | Information' {seq; _} | Information'' {seq; _}) ->
+  | (INFORMATION {seq; _} | INFORMATION2 {seq; _} | INFORMATION3 {seq; _}) ->
     Printf.printf "information: #%d\n" seq
-  | Free {seq; message; _} ->
+  | FREE {seq; message; _} ->
     Printf.printf "message: #%d %S\n" seq message
+  | EOF ->
+    ()
 
 
 (*

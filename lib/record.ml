@@ -433,40 +433,43 @@ let parse_free l =
 
 
 type t =
-  | Header of header
-  | Old_balance of old_balance
-  | Movement of movement
-  | Movement' of movement'
-  | Movement'' of movement''
-  | Information of information
-  | Information' of information'
-  | Information'' of information''
-  | Free of free
-  | New_balance of new_balance
-  | Footer of footer
+  | HEADER of header
+  | OLD_BALANCE of old_balance
+  | MOVEMENT of movement
+  | MOVEMENT2 of movement'
+  | MOVEMENT3 of movement''
+  | INFORMATION of information
+  | INFORMATION2 of information'
+  | INFORMATION3 of information''
+  | FREE of free
+  | NEW_BALANCE of new_balance
+  | FOOTER of footer
+  | EOF
   (** p. 4 *)
+
+type token = t
 
 let parse l =
   if String.length l = 128 then
     match l.[0] with
-    | '0' -> Ok (Header (parse_header l))
-    | '1' -> Ok (Old_balance (parse_old_balance l))
-    | '8' -> Ok (New_balance (parse_new_balance l))
-    | '9' -> Ok (Footer (parse_footer l))
-    | '4' -> Ok (Free (parse_free l))
+    | '0' -> Ok (HEADER (parse_header l))
+    | '1' -> Ok (OLD_BALANCE (parse_old_balance l))
+    | '8' -> Ok (NEW_BALANCE (parse_new_balance l))
+    | '9' -> Ok (FOOTER (parse_footer l))
+    | '4' -> Ok (FREE (parse_free l))
     | '2' ->
       begin match l.[1] with
-      | '1' -> Ok (Movement (parse_movement l))
-      | '2' -> Ok (Movement' (parse_movement' l))
-      | '3' -> Ok (Movement'' (parse_movement'' l))
+      | '1' -> Ok (MOVEMENT (parse_movement l))
+      | '2' -> Ok (MOVEMENT2 (parse_movement' l))
+      | '3' -> Ok (MOVEMENT3 (parse_movement'' l))
       | c -> Error (`Unknown_family c)
       end
     | '3' ->
       let info = parse_generic_information l in
       begin match info.article with
-      | '1' -> Ok (Information info)
-      | '2' -> Ok (Information' info)
-      | '3' -> Ok (Information'' info)
+      | '1' -> Ok (INFORMATION info)
+      | '2' -> Ok (INFORMATION2 info)
+      | '3' -> Ok (INFORMATION3 info)
       | c -> Error (`Unknown_info c)
       end
     | c -> Error (`Unknown_record c)

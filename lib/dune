@@ -1,2 +1,2 @@
-(menhir (modules parser) (flags --table))
+(menhir (modules parser) (flags --table --external-tokens Record))
 (library (name coda) (libraries menhirLib))
